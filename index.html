@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสร้างฉลากยาเคมีบำบัด</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Theme: Medical Blue */
+            --primary: #0277bd;       
+            --primary-dark: #004c8c;  
+            --bg-body: #eceff1;       
+            --text-content: #263238;  
+            --card-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-content);
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* --- UI Screen Styles (ส่วนที่แสดงบนหน้าจอ) --- */
+        .screen-only-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            position: fixed; width: 100%; top: 0; z-index: 1000;
+        }
+        .screen-only-header h1 { margin: 0; font-size: 1.3rem; font-weight: 700; }
+
+        .screen-only-main {
+            flex: 1; margin-top: 70px; padding: 20px;
+            width: 100%; max-width: 750px;
+            margin-left: auto; margin-right: auto;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* Cards & Forms */
+        .card {
+            background: white; border-radius: var(--radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden; border: 1px solid #cfd8dc;
+            animation: fadeIn 0.4s ease;
+        }
+        .card-header {
+            background-color: var(--primary); color: white;
+            padding: 15px; text-align: center;
+        }
+        .card-header h2 { margin: 0; font-size: 1.25rem; font-weight: 700; }
+        .card-header p { margin: 5px 0 0; opacity: 0.9; font-size: 0.9rem; }
+        .card-body { padding: 20px; }
+
+        /* Tabs */
+        .tab-container {
+            display: flex; background: #cfd8dc;
+            border-radius: var(--radius); padding: 4px;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            font-family: 'Sarabun', sans-serif; font-weight: 700; cursor: pointer;
+            color: #546e7a; transition: 0.3s; background: transparent; font-size: 1rem;
+        }
+        .tab-btn.active {
+            background: white; color: var(--primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Inputs */
+        label { display: block; font-weight: 700; margin-bottom: 6px; color: #37474f; }
+        input, select {
+            width: 100%; padding: 12px; border: 2px solid #b0bec5;
+            border-radius: 8px; font-family: 'Sarabun'; font-size: 1rem;
+        }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        input:disabled { background: #e0e0e0; color: #616161; cursor: not-allowed; }
+
+        /* Buttons */
+        .btn-check {
+            width: 100%; padding: 14px; margin-top: 20px;
+            background-color: var(--primary); color: white;
+            border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700;
+            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: 0.2s; font-family: 'Sarabun';
+        }
+        .btn-check:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        
+        .btn-print {
+            background-color: #455a64; margin-top: 15px;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn-print:hover { background-color: #263238; }
+
+        /* Preview Area (On Screen) */
+        .preview-area {
+            display: none; background: white; padding: 24px;
+            border-radius: var(--radius); box-shadow: var(--card-shadow);
+            border-left: 6px solid var(--primary); margin-top: 20px;
+        }
+        .preview-content {
+            border: 2px dashed #b0bec5; background: #fafafa;
+            padding: 20px; border-radius: 8px;
+        }
+        /* Preview Typography (Similar to Print) */
+        .pv-title { font-size: 1.4rem; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+        .pv-line { font-size: 1.1rem; margin-bottom: 6px; }
+        .pv-line strong { font-weight: 700; }
+        .pv-dates { font-size: 1.1rem; margin-bottom: 6px; }
+        .pv-advice { font-size: 1rem; color: #c62828; font-weight: 600; margin-top: 15px; }
+
+        .hidden { display: none; }
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+        .input-group-full { grid-column: 1 / -1; }
+        
+        .screen-only-footer {
+            margin-top: auto; padding: 24px; text-align: center;
+            font-size: 0.85rem; color: #90a4ae; border-top: 1px solid #cfd8dc;
+            background: white;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ============================================================
+           PRINT SYSTEM (THE FIX)
+           ============================================================ */
+        
+        /* 1. ซ่อนส่วนที่ไม่ต้องการพิมพ์ออกจากสารบบ */
+        @media print {
+            .screen-only-header, 
+            .screen-only-main, 
+            .screen-only-footer,
+            .btn-print {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+            }
+            
+            /* 2. ตั้งค่าหน้ากระดาษ ตัด Header/Footer ของ Browser */
+            @page {
+                size: 8.5cm 6cm;
+                margin: 0; /* ตัดวันที่/URL ทิ้ง */
+            }
+
+            /* 3. แสดงพื้นที่พิมพ์ */
+            #printable-area {
+                display: block !important;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 8.5cm;
+                height: 6cm;
+                background-color: white;
+                
+                /* ระยะขอบ: บน 1cm ตามต้องการ */
+                padding-top: 1.0cm;
+                padding-left: 0.4cm;
+                padding-right: 0.4cm;
+                
+                box-sizing: border-box;
+                font-family: 'Sarabun', sans-serif !important;
+                color: black;
+                overflow: hidden;
+            }
+
+            /* 4. Typography สำหรับการพิมพ์ */
+            .p-drug-name {
+                font-size: 14pt;
+                font-weight: 700;
+                margin-bottom: 4px;
+                line-height: 1.2;
+                color: black;
+            }
+
+            .p-line {
+                font-size: 10.5pt;
+                line-height: 1.4;
+                margin-bottom: 2px;
+                color: black;
+            }
+            
+            .p-line strong {
+                font-weight: 700;
+            }
+
+            .p-divider {
+                border-top: 1px solid #000;
+                margin: 6px 0;
+                width: 100%;
+            }
+
+            .p-dates {
+                font-size: 10.5pt;
+                line-height: 1.4;
+                color: black;
+            }
+            
+            .p-dates strong {
+                font-weight: 700;
+            }
+
+            .p-advice {
+                font-size: 9pt;
+                font-weight: 600; /* Regular Bold, NO Italic */
+                margin-top: auto; /* ดันไปล่างสุดถ้ามีที่เหลือ */
+                padding-top: 4px;
+                padding-bottom: 2px;
+                font-style: normal !important;
+                color: black;
+            }
+        }
+
+        /* ซ่อนพื้นที่พิมพ์ในโหมดหน้าจอปกติ */
+        #printable-area { display: none; }
+
+    </style>
+</head>
+<body>
+
+    <header class="screen-only-header">
+        <h1>ระบบสร้างฉลากยาเคมีบำบัด</h1>
+    </header>
+
+    <main class="screen-only-main">
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('capecitabine')">Capecitabine</button>
+            <button class="tab-btn" onclick="switchTab('ribociclib')">Ribociclib</button>
+        </div>
+
+        <div id="form-capecitabine" class="card">
+            <div class="card-header">
+                <h2>ข้อมูลยา Capecitabine</h2>
+                <p>สูตรรับประทาน 14 วัน หยุด 7 วัน (รอบ 21 วัน)</p>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div>
+                        <label>จำนวนเม็ด (ต่อมื้อ)</label>
+                        <input type="number" id="cap_pills" placeholder="ระบุตัวเลข" inputmode="numeric">
+                    </div>
+                    <div>
+                        <label>มื้ออาหาร</label>
+                        <input type="text" value="2 ครั้ง (เช้า - เย็น)" disabled>
+                    </div>
+                    <div class="input-group-full">
+                        <label>วันที่เริ่มรับประทานยา (Day 1)</label>
+                        <input type="date" id="cap_startDate">
+                    </div>
+                </div>
+                <button class="btn-check" onclick="generateLabel('capecitabine')">ตรวจสอบข้อมูล</button>
+            </div>
+        </div>
+
+        <div id="form-ribociclib" class="card hidden">
+            <div class="card-header" style="background: linear-gradient(135deg, #1565c0, #0d47a1);">
+                <h2>ข้อมูลยา Ribociclib</h2>
+                <p>สูตรรับประทาน 21 วัน หยุด 7 วัน (รอบ 28 วัน)</p>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div>
+                        <label>จำนวนเม็ด (ต่อมื้อ)</label>
+                        <input type="number" id="ribo_pills" placeholder="ระบุตัวเลข" inputmode="numeric">
+                    </div>
+                    <div>
+                        <label>เวลาที่รับประทาน</label>
+                        <select id="ribo_timing">
+                            <option value="เช้า">1 ครั้ง (เช้า)</option>
+                            <option value="เย็น">1 ครั้ง (เย็น)</option>
+                        </select>
+                    </div>
+                    <div class="input-group-full">
+                        <label>วันที่เริ่มรับประทานยา (Day 1)</label>
+                        <input type="date" id="ribo_startDate">
+                    </div>
+                </div>
+                <button class="btn-check" onclick="generateLabel('ribociclib')" style="background-color: #1565c0;">ตรวจสอบข้อมูล</button>
+            </div>
+        </div>
+
+        <div id="preview-area" class="preview-area">
+            <h3>ฉลากยา</h3>
+            <div class="preview-content">
+                <div class="pv-title" id="prev_drugName">Drug Name</div>
+                <div class="pv-line" id="prev_line1">...</div>
+                <div class="pv-line" id="prev_line2">...</div>
+                <hr style="border:0; border-top:1px dashed #cfd8dc; margin:10px 0;">
+                <div class="pv-dates" id="prev_dates1">...</div>
+                <div class="pv-dates" id="prev_dates2">...</div>
+                <div class="pv-advice" id="prev_advice">...</div>
+            </div>
+
+            <button class="btn-check btn-print" onclick="window.print()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                พิมพ์ฉลากยา
+            </button>
+        </div>
+    </main>
+
+    <footer class="screen-only-footer">
+        ระบบสร้างฉลากยาเคมีบำบัด
+    </footer>
+
+    <div id="printable-area">
+        <div class="p-drug-name" id="print_drugName">DRUG NAME</div>
+        <div class="p-line" id="print_dosage">...</div>
+        <div class="p-line" id="print_timing">...</div>
+        <div class="p-divider"></div>
+        <div class="p-dates" id="print_dates1">...</div>
+        <div class="p-dates" id="print_dates2">...</div>
+        <div class="p-advice" id="print_advice">...</div>
+    </div>
+
+    <script>
+        // Set Default Date
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('cap_startDate').value = today;
+            document.getElementById('ribo_startDate').value = today;
+        });
+
+        // Tab Switch
+        function switchTab(drug) {
+            document.getElementById('preview-area').style.display = 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            if (drug === 'capecitabine') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('form-capecitabine').classList.remove('hidden');
+                document.getElementById('form-ribociclib').classList.add('hidden');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('form-capecitabine').classList.add('hidden');
+                document.getElementById('form-ribociclib').classList.remove('hidden');
+            }
+        }
+
+        // Date Format
+        function formatThaiDate(dateObj) {
+            const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            return `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear() + 543}`;
+        }
+
+        // Logic
+        function generateLabel(drugType) {
+            let pills, startDateStr, timingText, dosageText, drugName, adviceText;
+            let takeDays, restDays;
+
+            if (drugType === 'capecitabine') {
+                pills = document.getElementById('cap_pills').value;
+                startDateStr = document.getElementById('cap_startDate').value;
+                takeDays = 14; restDays = 7;
+                drugName = "Capecitabine";
+                dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>2</strong> ครั้ง`;
+                timingText = "หลังอาหารเช้า และ เย็น";
+                adviceText = "คำแนะนำ: ควรรับประทานยาห่างกัน 12 ชั่วโมง";
+            } else {
+                pills = document.getElementById('ribo_pills').value;
+                startDateStr = document.getElementById('ribo_startDate').value;
+                const timeOpt = document.getElementById('ribo_timing').value;
+                takeDays = 21; restDays = 7;
+                drugName = "Ribociclib";
+                dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>1</strong> ครั้ง`;
+                timingText = `เวลา <strong>${timeOpt}</strong>`;
+                adviceText = "คำแนะนำ: ควรรับประทานยาตรงเวลาทุกวัน";
+            }
+
+            if (!pills || !startDateStr) {
+                alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+                return;
+            }
+
+            // Calc Dates
+            const start = new Date(startDateStr);
+            const endTake = new Date(start); endTake.setDate(start.getDate() + takeDays - 1);
+            const startRest = new Date(start); startRest.setDate(start.getDate() + takeDays);
+            const endRest = new Date(start); endRest.setDate(start.getDate() + takeDays + restDays - 1);
+
+            const sDate = formatThaiDate(start);
+            const eTake = formatThaiDate(endTake);
+            const sRest = formatThaiDate(startRest);
+            const eRest = formatThaiDate(endRest);
+
+            // Update Preview (Screen)
+            document.getElementById('prev_drugName').innerText = drugName;
+            document.getElementById('prev_line1').innerHTML = dosageText;
+            document.getElementById('prev_line2').innerHTML = timingText;
+            document.getElementById('prev_dates1').innerHTML = `เริ่มทาน: <strong>${sDate}</strong> ถึง <strong>${eTake}</strong>`;
+            document.getElementById('prev_dates2').innerHTML = `หยุดพักยา: <strong>${sRest}</strong> ถึง <strong>${eRest}</strong>`;
+            document.getElementById('prev_advice').innerText = adviceText;
+
+            // Update Print (Hidden)
+            document.getElementById('print_drugName').innerText = drugName;
+            document.getElementById('print_dosage').innerHTML = dosageText;
+            document.getElementById('print_timing').innerHTML = timingText;
+            document.getElementById('print_dates1').innerHTML = `เริ่มทาน: <strong>${sDate}</strong> ถึง <strong>${eTake}</strong>`;
+            document.getElementById('print_dates2').innerHTML = `หยุดยา: <strong>${sRest}</strong> ถึง <strong>${eRest}</strong>`;
+            document.getElementById('print_advice').innerText = adviceText;
+
+            // Show Result
+            const preview = document.getElementById('preview-area');
+            preview.style.display = 'block';
+            setTimeout(() => preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
+        }
+    </script>
+</body>
+</html>

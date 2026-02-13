@@ -124,6 +124,14 @@
         .hidden { display: none; }
         .form-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
         @media (min-width: 600px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+        
+        /* Utility for nested grid */
+        .dual-input-row {
+            grid-column: 1 / -1;
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px;
+        }
         .input-group-full { grid-column: 1 / -1; }
         
         .screen-only-footer {
@@ -135,10 +143,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ============================================================
-           PRINT SYSTEM (THE FIX)
+           PRINT SYSTEM (MASTERPIECE EDITION)
            ============================================================ */
         
-        /* 1. ซ่อนส่วนที่ไม่ต้องการพิมพ์ออกจากสารบบ */
         @media print {
             .screen-only-header, 
             .screen-only-main, 
@@ -151,13 +158,11 @@
                 background: white;
             }
             
-            /* 2. ตั้งค่าหน้ากระดาษ ตัด Header/Footer ของ Browser */
             @page {
                 size: 8.5cm 6cm;
-                margin: 0; /* ตัดวันที่/URL ทิ้ง */
+                margin: 0; 
             }
 
-            /* 3. แสดงพื้นที่พิมพ์ */
             #printable-area {
                 display: block !important;
                 position: fixed;
@@ -167,9 +172,9 @@
                 height: 6cm;
                 background-color: white;
                 
-                /* ระยะขอบ: บน 1cm ตามต้องการ */
+                /* Layout Specs Update: Left margin 0.5cm */
                 padding-top: 1.0cm;
-                padding-left: 0.4cm;
+                padding-left: 0.5cm;  /* UPDATED HERE */
                 padding-right: 0.4cm;
                 
                 box-sizing: border-box;
@@ -178,7 +183,6 @@
                 overflow: hidden;
             }
 
-            /* 4. Typography สำหรับการพิมพ์ */
             .p-drug-name {
                 font-size: 14pt;
                 font-weight: 700;
@@ -216,8 +220,8 @@
 
             .p-advice {
                 font-size: 9pt;
-                font-weight: 600; /* Regular Bold, NO Italic */
-                margin-top: auto; /* ดันไปล่างสุดถ้ามีที่เหลือ */
+                font-weight: 600; 
+                margin-top: auto; 
                 padding-top: 4px;
                 padding-bottom: 2px;
                 font-style: normal !important;
@@ -225,7 +229,6 @@
             }
         }
 
-        /* ซ่อนพื้นที่พิมพ์ในโหมดหน้าจอปกติ */
         #printable-area { display: none; }
 
     </style>
@@ -249,14 +252,23 @@
             </div>
             <div class="card-body">
                 <div class="form-grid">
-                    <div>
-                        <label>จำนวนเม็ด (ต่อมื้อ)</label>
-                        <input type="number" id="cap_pills" placeholder="ระบุตัวเลข" inputmode="numeric">
+                    
+                    <div class="dual-input-row">
+                        <div>
+                            <label>จำนวนเม็ด (มื้อเช้า)</label>
+                            <input type="number" id="cap_pills_morning" placeholder="เช่น 3" inputmode="numeric">
+                        </div>
+                        <div>
+                            <label>จำนวนเม็ด (มื้อเย็น)</label>
+                            <input type="number" id="cap_pills_evening" placeholder="เช่น 3" inputmode="numeric">
+                        </div>
                     </div>
-                    <div>
-                        <label>มื้ออาหาร</label>
-                        <input type="text" value="2 ครั้ง (เช้า - เย็น)" disabled>
+
+                    <div class="input-group-full">
+                        <label>เวลาที่รับประทาน</label>
+                        <input type="text" value="2 ครั้ง (เช้า-เย็น)" disabled style="background:#e0e0e0; color:#455a64;">
                     </div>
+                    
                     <div class="input-group-full">
                         <label>วันที่เริ่มรับประทานยา (Day 1)</label>
                         <input type="date" id="cap_startDate">
@@ -331,14 +343,12 @@
     </div>
 
     <script>
-        // Set Default Date
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('cap_startDate').value = today;
             document.getElementById('ribo_startDate').value = today;
         });
 
-        // Tab Switch
         function switchTab(drug) {
             document.getElementById('preview-area').style.display = 'none';
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -354,39 +364,55 @@
             }
         }
 
-        // Date Format
         function formatThaiDate(dateObj) {
             const months = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
             return `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear() + 543}`;
         }
 
-        // Logic
         function generateLabel(drugType) {
-            let pills, startDateStr, timingText, dosageText, drugName, adviceText;
+            let pillsM, pillsE, startDateStr, timingText, dosageText, drugName, adviceText;
             let takeDays, restDays;
 
             if (drugType === 'capecitabine') {
-                pills = document.getElementById('cap_pills').value;
+                // Get values from new split inputs
+                pillsM = document.getElementById('cap_pills_morning').value;
+                pillsE = document.getElementById('cap_pills_evening').value;
                 startDateStr = document.getElementById('cap_startDate').value;
+                
+                if (!pillsM || !pillsE || !startDateStr) {
+                    alert("กรุณากรอกข้อมูลให้ครบถ้วน (เม็ดเช้า, เม็ดเย็น, และวันเริ่ม)");
+                    return;
+                }
+
                 takeDays = 14; restDays = 7;
                 drugName = "Capecitabine";
-                dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>2</strong> ครั้ง`;
+                
+                // Logic for dosage text
+                if (pillsM === pillsE) {
+                    dosageText = `รับประทานครั้งละ <strong>${pillsM}</strong> เม็ด`;
+                } else {
+                    dosageText = `มื้อเช้า <strong>${pillsM}</strong> เม็ด / มื้อเย็น <strong>${pillsE}</strong> เม็ด`;
+                }
+                
                 timingText = "หลังอาหารเช้า และ เย็น";
                 adviceText = "คำแนะนำ: ควรรับประทานยาห่างกัน 12 ชั่วโมง";
+
             } else {
-                pills = document.getElementById('ribo_pills').value;
+                // Ribociclib Logic (Unchanged)
+                const pills = document.getElementById('ribo_pills').value;
                 startDateStr = document.getElementById('ribo_startDate').value;
                 const timeOpt = document.getElementById('ribo_timing').value;
+                
+                if (!pills || !startDateStr) {
+                    alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+                    return;
+                }
+
                 takeDays = 21; restDays = 7;
                 drugName = "Ribociclib";
                 dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>1</strong> ครั้ง`;
                 timingText = `เวลา <strong>${timeOpt}</strong>`;
                 adviceText = "คำแนะนำ: ควรรับประทานยาตรงเวลาทุกวัน";
-            }
-
-            if (!pills || !startDateStr) {
-                alert("กรุณากรอกข้อมูลให้ครบถ้วน");
-                return;
             }
 
             // Calc Dates

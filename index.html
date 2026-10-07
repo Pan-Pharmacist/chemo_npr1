@@ -68,11 +68,13 @@
         .tab-container {
             display: flex; background: #cfd8dc;
             border-radius: var(--radius); padding: 4px;
+            overflow-x: auto;
         }
         .tab-btn {
             flex: 1; padding: 12px; border: none; border-radius: 8px;
             font-family: 'Sarabun', sans-serif; font-weight: 700; cursor: pointer;
             color: #546e7a; transition: 0.3s; background: transparent; font-size: 1rem;
+            white-space: nowrap; min-width: 120px;
         }
         .tab-btn.active {
             background: white; color: var(--primary);
@@ -174,7 +176,7 @@
                 
                 /* Layout Specs Update: Left margin 0.5cm */
                 padding-top: 1.0cm;
-                padding-left: 0.5cm;  /* UPDATED HERE */
+                padding-left: 0.5cm; 
                 padding-right: 0.4cm;
                 
                 box-sizing: border-box;
@@ -243,8 +245,11 @@
         <div class="tab-container">
             <button class="tab-btn active" onclick="switchTab('capecitabine')">Capecitabine</button>
             <button class="tab-btn" onclick="switchTab('ribociclib')">Ribociclib</button>
+            <button class="tab-btn" onclick="switchTab('palbociclib')">Palbociclib</button>
+            <button class="tab-btn" onclick="switchTab('ts_one')">TS-ONE</button>
         </div>
 
+        <!-- ฟอร์ม Capecitabine -->
         <div id="form-capecitabine" class="card">
             <div class="card-header">
                 <h2>ข้อมูลยา Capecitabine</h2>
@@ -278,6 +283,7 @@
             </div>
         </div>
 
+        <!-- ฟอร์ม Ribociclib -->
         <div id="form-ribociclib" class="card hidden">
             <div class="card-header" style="background: linear-gradient(135deg, #1565c0, #0d47a1);">
                 <h2>ข้อมูลยา Ribociclib</h2>
@@ -302,6 +308,66 @@
                     </div>
                 </div>
                 <button class="btn-check" onclick="generateLabel('ribociclib')" style="background-color: #1565c0;">ตรวจสอบข้อมูล</button>
+            </div>
+        </div>
+
+        <!-- ฟอร์ม Palbociclib -->
+        <div id="form-palbociclib" class="card hidden">
+            <div class="card-header" style="background: linear-gradient(135deg, #00838f, #006064);">
+                <h2>ข้อมูลยา Palbociclib</h2>
+                <p>สูตรรับประทาน 21 วัน หยุด 7 วัน (รอบ 28 วัน)</p>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div>
+                        <label>จำนวนเม็ด (ต่อมื้อ)</label>
+                        <!-- Fix ไว้ที่ 1 เม็ดตามที่ระบุ -->
+                        <input type="number" id="palbo_pills" value="1" disabled style="background:#e0e0e0; color:#455a64; font-weight: bold; text-align: center;">
+                    </div>
+                    <div>
+                        <label>เวลาที่รับประทาน</label>
+                        <select id="palbo_timing">
+                            <option value="เช้า">1 ครั้ง (เช้า)</option>
+                            <option value="เย็น">1 ครั้ง (เย็น)</option>
+                        </select>
+                    </div>
+                    <div class="input-group-full">
+                        <label>วันที่เริ่มรับประทานยา (Day 1)</label>
+                        <input type="date" id="palbo_startDate">
+                    </div>
+                </div>
+                <button class="btn-check" onclick="generateLabel('palbociclib')" style="background-color: #00838f;">ตรวจสอบข้อมูล</button>
+            </div>
+        </div>
+
+        <!-- ฟอร์ม TS-ONE -->
+        <div id="form-ts_one" class="card hidden">
+            <div class="card-header" style="background: linear-gradient(135deg, #6a1b9a, #4a148c);">
+                <h2>ข้อมูลยา TS-ONE</h2>
+                <p>สูตรรับประทาน 28 วัน หยุด 14 วัน (รอบ 42 วัน)</p>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div>
+                        <label>จำนวนเม็ด (ต่อมื้อ)</label>
+                        <select id="ts_pills">
+                            <option value="2">2 เม็ด</option>
+                            <option value="3">3 เม็ด</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>เวลาที่รับประทาน</label>
+                        <select id="ts_timing">
+                            <option value="เช้า">1 ครั้ง (เช้า)</option>
+                            <option value="เย็น">1 ครั้ง (เย็น)</option>
+                        </select>
+                    </div>
+                    <div class="input-group-full">
+                        <label>วันที่เริ่มรับประทานยา (Day 1)</label>
+                        <input type="date" id="ts_startDate">
+                    </div>
+                </div>
+                <button class="btn-check" onclick="generateLabel('ts_one')" style="background-color: #6a1b9a;">ตรวจสอบข้อมูล</button>
             </div>
         </div>
 
@@ -347,20 +413,34 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('cap_startDate').value = today;
             document.getElementById('ribo_startDate').value = today;
+            document.getElementById('palbo_startDate').value = today;
+            document.getElementById('ts_startDate').value = today;
         });
 
         function switchTab(drug) {
             document.getElementById('preview-area').style.display = 'none';
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(b => b.classList.remove('active'));
             
+            // ซ่อนฟอร์มทั้งหมดก่อน
+            document.getElementById('form-capecitabine').classList.add('hidden');
+            document.getElementById('form-ribociclib').classList.add('hidden');
+            document.getElementById('form-palbociclib').classList.add('hidden');
+            document.getElementById('form-ts_one').classList.add('hidden');
+            
+            // เปิดฟอร์มและตั้งค่าแท็บที่เลือกให้ทำงาน
             if (drug === 'capecitabine') {
-                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                tabs[0].classList.add('active');
                 document.getElementById('form-capecitabine').classList.remove('hidden');
-                document.getElementById('form-ribociclib').classList.add('hidden');
-            } else {
-                document.querySelectorAll('.tab-btn')[1].classList.add('active');
-                document.getElementById('form-capecitabine').classList.add('hidden');
+            } else if (drug === 'ribociclib') {
+                tabs[1].classList.add('active');
                 document.getElementById('form-ribociclib').classList.remove('hidden');
+            } else if (drug === 'palbociclib') {
+                tabs[2].classList.add('active');
+                document.getElementById('form-palbociclib').classList.remove('hidden');
+            } else if (drug === 'ts_one') {
+                tabs[3].classList.add('active');
+                document.getElementById('form-ts_one').classList.remove('hidden');
             }
         }
 
@@ -374,7 +454,6 @@
             let takeDays, restDays;
 
             if (drugType === 'capecitabine') {
-                // Get values from new split inputs
                 pillsM = document.getElementById('cap_pills_morning').value;
                 pillsE = document.getElementById('cap_pills_evening').value;
                 startDateStr = document.getElementById('cap_startDate').value;
@@ -387,7 +466,6 @@
                 takeDays = 14; restDays = 7;
                 drugName = "Capecitabine";
                 
-                // Logic for dosage text
                 if (pillsM === pillsE) {
                     dosageText = `รับประทานครั้งละ <strong>${pillsM}</strong> เม็ด`;
                 } else {
@@ -397,8 +475,7 @@
                 timingText = "หลังอาหารเช้า และ เย็น";
                 adviceText = "คำแนะนำ: ควรรับประทานยาห่างกัน 12 ชั่วโมง";
 
-            } else {
-                // Ribociclib Logic (Unchanged)
+            } else if (drugType === 'ribociclib') {
                 const pills = document.getElementById('ribo_pills').value;
                 startDateStr = document.getElementById('ribo_startDate').value;
                 const timeOpt = document.getElementById('ribo_timing').value;
@@ -413,9 +490,41 @@
                 dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>1</strong> ครั้ง`;
                 timingText = `เวลา <strong>${timeOpt}</strong>`;
                 adviceText = "คำแนะนำ: ควรรับประทานยาตรงเวลาทุกวัน";
+
+            } else if (drugType === 'palbociclib') {
+                const pills = 1; // Fix ไว้ที่ 1 เม็ด
+                startDateStr = document.getElementById('palbo_startDate').value;
+                const timeOpt = document.getElementById('palbo_timing').value;
+                
+                if (!startDateStr) {
+                    alert("กรุณาระบุวันที่เริ่มรับประทานยา");
+                    return;
+                }
+
+                takeDays = 21; restDays = 7; // รับประทาน 21 วัน หยุด 7 วัน
+                drugName = "Palbociclib";
+                dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>1</strong> ครั้ง`;
+                timingText = `เวลา <strong>${timeOpt}</strong>`;
+                adviceText = "คำแนะนำ: ควรรับประทานยาตรงเวลาทุกวัน";
+
+            } else if (drugType === 'ts_one') {
+                const pills = document.getElementById('ts_pills').value;
+                startDateStr = document.getElementById('ts_startDate').value;
+                const timeOpt = document.getElementById('ts_timing').value;
+                
+                if (!pills || !startDateStr) {
+                    alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+                    return;
+                }
+
+                takeDays = 28; restDays = 14; // รับประทาน 28 วัน หยุด 14 วัน
+                drugName = "TS-ONE";
+                dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>1</strong> ครั้ง`;
+                timingText = `เวลา <strong>${timeOpt}</strong>`;
+                adviceText = "คำแนะนำ: ควรรับประทานยาตรงเวลาทุกวัน";
             }
 
-            // Calc Dates
+            // คำนวณวันที่
             const start = new Date(startDateStr);
             const endTake = new Date(start); endTake.setDate(start.getDate() + takeDays - 1);
             const startRest = new Date(start); startRest.setDate(start.getDate() + takeDays);
@@ -426,7 +535,7 @@
             const sRest = formatThaiDate(startRest);
             const eRest = formatThaiDate(endRest);
 
-            // Update Preview (Screen)
+            // แสดงผล Preview บนหน้าจอ
             document.getElementById('prev_drugName').innerText = drugName;
             document.getElementById('prev_line1').innerHTML = dosageText;
             document.getElementById('prev_line2').innerHTML = timingText;
@@ -434,7 +543,7 @@
             document.getElementById('prev_dates2').innerHTML = `หยุดพักยา: <strong>${sRest}</strong> ถึง <strong>${eRest}</strong>`;
             document.getElementById('prev_advice').innerText = adviceText;
 
-            // Update Print (Hidden)
+            // ส่งค่าไปยังโหมด Print
             document.getElementById('print_drugName').innerText = drugName;
             document.getElementById('print_dosage').innerHTML = dosageText;
             document.getElementById('print_timing').innerHTML = timingText;
@@ -442,7 +551,7 @@
             document.getElementById('print_dates2').innerHTML = `หยุดยา: <strong>${sRest}</strong> ถึง <strong>${eRest}</strong>`;
             document.getElementById('print_advice').innerText = adviceText;
 
-            // Show Result
+            // แสดงผลลัพธ์การ์ด
             const preview = document.getElementById('preview-area');
             preview.style.display = 'block';
             setTimeout(() => preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);

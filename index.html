@@ -63,6 +63,19 @@
         .card-header h2 { margin: 0; font-size: 1.25rem; font-weight: 700; }
         .card-header p { margin: 5px 0 0; opacity: 0.9; font-size: 0.9rem; }
         .card-body { padding: 20px; }
+        
+        /* Box Separator for multiple forms in one card */
+        .sub-box {
+            padding: 20px;
+        }
+        .sub-box + .sub-box {
+            border-top: 2px dashed #cfd8dc;
+            background-color: #fafafa;
+        }
+        .sub-box h3 {
+            margin-top: 0; color: #4a148c; font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
 
         /* Tabs */
         .tab-container {
@@ -340,34 +353,63 @@
             </div>
         </div>
 
-        <!-- ฟอร์ม TS-ONE -->
+        <!-- ฟอร์ม TS-ONE (มี 2 สูตรใน Tab เดียว) -->
         <div id="form-ts_one" class="card hidden">
             <div class="card-header" style="background: linear-gradient(135deg, #6a1b9a, #4a148c);">
                 <h2>ข้อมูลยา TS-ONE</h2>
-                <p>สูตรรับประทาน 28 วัน หยุด 14 วัน (รอบ 42 วัน)</p>
+                <p>เลือกสูตรการรับประทานที่ต้องการ</p>
             </div>
-            <div class="card-body">
+            
+            <!-- Box 1: สูตร 28 วัน / หยุด 14 วัน -->
+            <div class="sub-box">
+                <h3>สูตรรับประทาน 28 วัน หยุด 14 วัน (รอบ 42 วัน)</h3>
                 <div class="form-grid">
                     <div>
                         <label>จำนวนเม็ด (ต่อมื้อ)</label>
-                        <select id="ts_pills">
+                        <select id="ts_pills_28">
                             <option value="2">2 เม็ด</option>
                             <option value="3">3 เม็ด</option>
                         </select>
                     </div>
                     <div>
                         <label>เวลาที่รับประทาน</label>
-                        <select id="ts_timing">
+                        <select id="ts_timing_28">
                             <option value="เช้า">1 ครั้ง (เช้า)</option>
                             <option value="เย็น">1 ครั้ง (เย็น)</option>
                         </select>
                     </div>
                     <div class="input-group-full">
                         <label>วันที่เริ่มรับประทานยา (Day 1)</label>
-                        <input type="date" id="ts_startDate">
+                        <input type="date" id="ts_startDate_28">
                     </div>
                 </div>
-                <button class="btn-check" onclick="generateLabel('ts_one')" style="background-color: #6a1b9a;">ตรวจสอบข้อมูล</button>
+                <button class="btn-check" onclick="generateLabel('ts_one_28')" style="background-color: #6a1b9a;">ตรวจสอบข้อมูล (สูตร 28 วัน)</button>
+            </div>
+
+            <!-- Box 2: สูตร 14 วัน / หยุด 7 วัน -->
+            <div class="sub-box">
+                <h3 style="color: #6a1b9a;">สูตรรับประทาน 14 วัน หยุด 7 วัน (รอบ 21 วัน)</h3>
+                <div class="form-grid">
+                    <div>
+                        <label>จำนวนเม็ด (ต่อมื้อ)</label>
+                        <select id="ts_pills_14">
+                            <option value="2">2 เม็ด</option>
+                            <option value="3">3 เม็ด</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>เวลาที่รับประทาน</label>
+                        <select id="ts_timing_14">
+                            <option value="เช้า">1 ครั้ง (เช้า)</option>
+                            <option value="เย็น">1 ครั้ง (เย็น)</option>
+                        </select>
+                    </div>
+                    <div class="input-group-full">
+                        <label>วันที่เริ่มรับประทานยา (Day 1)</label>
+                        <input type="date" id="ts_startDate_14">
+                    </div>
+                </div>
+                <button class="btn-check" onclick="generateLabel('ts_one_14')" style="background-color: #8e24aa;">ตรวจสอบข้อมูล (สูตร 14 วัน)</button>
             </div>
         </div>
 
@@ -414,7 +456,10 @@
             document.getElementById('cap_startDate').value = today;
             document.getElementById('ribo_startDate').value = today;
             document.getElementById('palbo_startDate').value = today;
-            document.getElementById('ts_startDate').value = today;
+            
+            // Set date for both TS-ONE forms
+            document.getElementById('ts_startDate_28').value = today;
+            document.getElementById('ts_startDate_14').value = today;
         });
 
         function switchTab(drug) {
@@ -507,10 +552,10 @@
                 timingText = `เวลา <strong>${timeOpt}</strong>`;
                 adviceText = "คำแนะนำ: ควรรับประทานยาตรงเวลาทุกวัน";
 
-            } else if (drugType === 'ts_one') {
-                const pills = document.getElementById('ts_pills').value;
-                startDateStr = document.getElementById('ts_startDate').value;
-                const timeOpt = document.getElementById('ts_timing').value;
+            } else if (drugType === 'ts_one_28') {
+                const pills = document.getElementById('ts_pills_28').value;
+                startDateStr = document.getElementById('ts_startDate_28').value;
+                const timeOpt = document.getElementById('ts_timing_28').value;
                 
                 if (!pills || !startDateStr) {
                     alert("กรุณากรอกข้อมูลให้ครบถ้วน");
@@ -518,6 +563,22 @@
                 }
 
                 takeDays = 28; restDays = 14; // รับประทาน 28 วัน หยุด 14 วัน
+                drugName = "TS-ONE";
+                dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>1</strong> ครั้ง`;
+                timingText = `เวลา <strong>${timeOpt}</strong>`;
+                adviceText = "คำแนะนำ: ควรรับประทานยาตรงเวลาทุกวัน";
+
+            } else if (drugType === 'ts_one_14') {
+                const pills = document.getElementById('ts_pills_14').value;
+                startDateStr = document.getElementById('ts_startDate_14').value;
+                const timeOpt = document.getElementById('ts_timing_14').value;
+                
+                if (!pills || !startDateStr) {
+                    alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+                    return;
+                }
+
+                takeDays = 14; restDays = 7; // รับประทาน 14 วัน หยุด 7 วัน
                 drugName = "TS-ONE";
                 dosageText = `รับประทานครั้งละ <strong>${pills}</strong> เม็ด วันละ <strong>1</strong> ครั้ง`;
                 timingText = `เวลา <strong>${timeOpt}</strong>`;
